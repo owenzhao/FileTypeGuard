@@ -1,0 +1,34 @@
+name: FileTypeGuard
+options:
+  bundleIdPrefix: com.filetypeguard
+  deploymentTarget:
+    macOS: "13.0"
+  developmentLanguage: en
+  xcodeVersion: "15.0"
+localizations:
+  - en
+  - ja
+  - zh-Hans
+  - zh-Hant
+settings:
+  base:
+    PRODUCT_BUNDLE_IDENTIFIER: com.filetypeguard.mac
+    INFOPLIST_FILE: FileTypeGuard/App/Info.plist
+    CODE_SIGN_ENTITLEMENTS: FileTypeGuard/App/FileTypeGuard.entitlements
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  FileTypeGuard:
+    type: application
+    platform: macOS
+    sources:
+      - FileTypeGuard
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.filetypeguard.mac
+        INFOPLIST_FILE: FileTypeGuard/App/Info.plist
+        CODE_SIGN_ENTITLEMENTS: FileTypeGuard/App/FileTypeGuard.entitlements
+    info:
+      path: FileTypeGuard/App/Info.plist
+    entitlements:
+      path: FileTypeGuard/App/FileTypeGuard.entitlements

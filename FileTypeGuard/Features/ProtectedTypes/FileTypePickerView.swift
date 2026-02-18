@@ -1,0 +1,451 @@
+import SwiftUI
+
+/// 可视化文件类型选择器
+struct FileTypePickerView: View {
+
+    // MARK: - Binding
+
+    @Binding var isPresented: Bool
+
+    // MARK: - State
+
+    @StateObject private var viewModel = AddTypeViewModel()
+    @State private var selectedCategory: CommonFileTypes.Category = .documents
+    @State private var selectedPresetType: CommonFileTypes.PresetFileType?
+    @State private var selectedApplication: Application?
+    @State private var customExtension = ""
+    @State private var showCustomInput = false
+    @State private var showingError = false
+    @State private var errorMessage = ""
+    @FocusState private var isCustomInputFocused: Bool
+
+    private let typesByCategory = CommonFileTypes.typesByCategory()
+
+    // MARK: - Body
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // 标题栏
+            header
+
+            Divider()
+
+            HStack(spacing: 0) {
+                // 左侧：分类 + 文件类型列表
+                leftPanel
+
+                Divider()
+
+                // 右侧：应用选择
+                rightPanel
+            }
+
+            Divider()
+
+            // 底部按钮
+            footer
+        }
+        .frame(width: 900, height: 600)
+        .alert(String(localized: "error"), isPresented: $showingError) {
+            Button(String(localized: "ok"), role: .cancel) {}
+        } message: {
+            Text(errorMessage)
+        }
+    }
+
+    // MARK: - Header
+
+    private var header: some View {
+        HStack {
+            Text("add_file_type_protection")
+                .font(.title2)
+                .fontWeight(.semibold)
+
+            Spacer()
+
+            Button {
+                isPresented = false
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.secondary)
+                    .font(.title3)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding()
+    }
+
+    // MARK: - Left Panel
+
+    private var leftPanel: some View {
+        VStack(spacing: 0) {
+            // 分类标签
+            categoryTabs
+
+            Divider()
+
+            // 文件类型网格
+            fileTypeGrid
+
+            // 自定义输入选项
+            if showCustomInput {
+                Divider()
+                customInputSection
+            }
+        }
+        .frame(width: 450)
+    }
+
+    // MARK: - Category Tabs
+
+    private var categoryTabs: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(CommonFileTypes.Category.allCases) { category in
+                    Button {
+                        selectedCategory = category
+                        selectedPresetType = nil
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: category.icon)
+                            Text(category.displayName)
+                        }
+                        .font(.subheadline)
+                        .fontWeight(selectedCategory == category ? .semibold : .regular)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(selectedCategory == category ? Color.accentColor : Color.clear)
+                        .foregroundStyle(selectedCategory == category ? .white : .primary)
+                        .cornerRadius(6)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+        }
+    }
+
+    // MARK: - File Type Grid
+
+    private var fileTypeGrid: some View {
+        ScrollView {
+            LazyVGrid(columns: [
+                GridItem(.flexible()),
+                GridItem(.flexible())
+            ], spacing: 12) {
+                ForEach(typesByCategory[selectedCategory] ?? []) { presetType in
+                    FileTypeCard(
+                        presetType: presetType,
+                        isSelected: selectedPresetType?.id == presetType.id
+                    )
+                    .onTapGesture {
+                        selectedPresetType = presetType
+                        showCustomInput = false
+                        selectedApplication = nil
+                    }
+                }
+
+                // 自定义选项卡片
+                CustomTypeCard(isActive: showCustomInput)
+                    .onTapGesture {
+                        showCustomInput = true
+                        selectedPresetType = nil
+                        selectedApplication = nil
+                        // 延迟聚焦，确保视图已显示
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            isCustomInputFocused = true
+                        }
+                    }
+            }
+            .padding()
+        }
+    }
+
+    // MARK: - Custom Input Section
+
+    private var customInputSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("custom_file_extension")
+                .font(.headline)
+
+            TextField(String(localized: "eg_xyz"), text: $customExtension)
+                .textFieldStyle(.roundedBorder)
+                .frame(height: 24)
+                .focused($isCustomInputFocused)
+        }
+        .padding()
+        .background(Color(nsColor: .controlBackgroundColor))
+        .allowsHitTesting(true)
+        .onAppear {
+            if showCustomInput {
+                isCustomInputFocused = true
+            }
+        }
+    }
+
+    // MARK: - Right Panel
+
+    private var rightPanel: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // 选中的文件类型信息
+            if let presetType = selectedPresetType {
+                selectedTypeInfo(presetType)
+            } else if showCustomInput && !customExtension.isEmpty {
+                customTypeInfo
+            } else {
+                emptySelection
+            }
+
+            Divider()
+
+            // 应用选择器
+            if selectedPresetType != nil || (showCustomInput && !customExtension.isEmpty) {
+                applicationPickerSection
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    // MARK: - Selected Type Info
+
+    private func selectedTypeInfo(_ presetType: CommonFileTypes.PresetFileType) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: presetType.icon)
+                    .font(.largeTitle)
+                    .foregroundStyle(.blue)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(presetType.displayName)
+                        .font(.title3)
+                        .fontWeight(.semibold)
+
+                    Text(presetType.extensions.joined(separator: ", "))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Text("UTI: \(presetType.uti)")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color(nsColor: .controlBackgroundColor))
+                .cornerRadius(4)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.blue.opacity(0.05))
+        .cornerRadius(8)
+    }
+
+    private var customTypeInfo: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "doc.badge.plus")
+                    .font(.largeTitle)
+                    .foregroundStyle(.orange)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("custom_file_type")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+
+                    Text(customExtension)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.orange.opacity(0.05))
+        .cornerRadius(8)
+    }
+
+    private var emptySelection: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "hand.tap.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(.secondary)
+
+            Text("select_file_type")
+                .font(.headline)
+                .foregroundStyle(.secondary)
+
+            Text("click_file_type_card")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Application Picker Section
+
+    private var applicationPickerSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("select_default_app")
+                .font(.headline)
+
+            if let fileType = currentFileType {
+                ApplicationPicker(
+                    fileType: fileType,
+                    selectedApplication: $selectedApplication
+                )
+            } else {
+                Text("identifying_file_type")
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+            }
+        }
+    }
+
+    // MARK: - Footer
+
+    private var footer: some View {
+        HStack {
+            Spacer()
+
+            Button(String(localized: "cancel")) {
+                isPresented = false
+            }
+            .keyboardShortcut(.cancelAction)
+
+            Button(String(localized: "add_protection")) {
+                addProtectionRule()
+            }
+            .keyboardShortcut(.defaultAction)
+            .buttonStyle(.borderedProminent)
+            .disabled(!canAddRule)
+        }
+        .padding()
+    }
+
+    // MARK: - Computed Properties
+
+    private var currentFileType: FileType? {
+        if let presetType = selectedPresetType {
+            return presetType.toFileType()
+        } else if showCustomInput && !customExtension.isEmpty {
+            return FileType.from(extension: customExtension)
+        }
+        return nil
+    }
+
+    private var canAddRule: Bool {
+        currentFileType != nil && selectedApplication != nil
+    }
+
+    // MARK: - Actions
+
+    private func addProtectionRule() {
+        guard let fileType = currentFileType,
+              let app = selectedApplication else {
+            return
+        }
+
+        do {
+            let rule = ProtectionRule(
+                fileType: fileType,
+                expectedApplication: app
+            )
+
+            try ConfigurationManager.shared.addProtectionRule(rule)
+
+            // 立即设置默认应用（覆盖所有相关 UTI，包括动态 UTI）
+            if let ext = fileType.extensions.first {
+                try LaunchServicesManager.shared.setDefaultApplicationForExtension(
+                    app.bundleID,
+                    extension: ext,
+                    primaryUTI: fileType.uti
+                )
+            } else {
+                try LaunchServicesManager.shared.setDefaultApplication(app.bundleID, for: fileType.uti)
+            }
+
+            print("✅ 成功添加保护规则: \(rule.displayName)")
+            isPresented = false
+
+        } catch {
+            errorMessage = String(localized: "add rule failed: \(error.localizedDescription)")
+            showingError = true
+        }
+    }
+}
+
+// MARK: - File Type Card
+
+struct FileTypeCard: View {
+    let presetType: CommonFileTypes.PresetFileType
+    let isSelected: Bool
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: presetType.icon)
+                .font(.title)
+                .foregroundStyle(isSelected ? .white : .blue)
+
+            Text(presetType.displayName)
+                .font(.subheadline)
+                .fontWeight(isSelected ? .semibold : .regular)
+                .foregroundStyle(isSelected ? .white : .primary)
+                .multilineTextAlignment(.center)
+
+            Text(presetType.extensions.joined(separator: ", "))
+                .font(.caption2)
+                .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .padding(.horizontal, 8)
+        .background(isSelected ? Color.accentColor : Color(nsColor: .controlBackgroundColor))
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(isSelected ? Color.clear : Color.gray.opacity(0.2), lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - Custom Type Card
+
+struct CustomTypeCard: View {
+    let isActive: Bool
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "plus.circle.fill")
+                .font(.title)
+                .foregroundStyle(isActive ? .white : .orange)
+
+            Text("custom_type")
+                .font(.subheadline)
+                .fontWeight(isActive ? .semibold : .regular)
+                .foregroundStyle(isActive ? .white : .primary)
+
+            Text("enter_extension")
+                .font(.caption2)
+                .foregroundStyle(isActive ? .white.opacity(0.8) : .secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .padding(.horizontal, 8)
+        .background(isActive ? Color.orange : Color(nsColor: .controlBackgroundColor))
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(isActive ? Color.clear : Color.gray.opacity(0.2), lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    FileTypePickerView(isPresented: .constant(true))
+}
