@@ -28,10 +28,23 @@ Many apps silently hijack your default file associations during installation or 
 - **Localized** — English, Japanese, Simplified Chinese, Traditional Chinese
 - **Zero dependencies** — Pure Swift + SwiftUI, no third-party libraries
 
+## Install
+
+### Homebrew (recommended)
+
+```bash
+brew tap yibie/tap
+brew install --cask filetypeguard
+```
+
+### Manual
+
+Download the latest `FileTypeGuard.zip` from [Releases](https://github.com/yibie/FileTypeGuard/releases), unzip, and move `FileTypeGuard.app` to `/Applications`.
+
 ## Requirements
 
 - macOS 13.0 (Ventura) or later
-- Xcode 15.0+ (for building)
+- Xcode 15.0+ (for building from source)
 
 ## Build
 
