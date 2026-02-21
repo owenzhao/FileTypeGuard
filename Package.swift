@@ -15,7 +15,10 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "FileTypeGuard",
-            path: "FileTypeGuard"
+            path: "FileTypeGuard",
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "FileTypeGuardTests",
