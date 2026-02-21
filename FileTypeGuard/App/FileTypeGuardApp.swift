@@ -1,8 +1,10 @@
 import SwiftUI
+import AppKit
 
 @main
 struct FileTypeGuardApp: App {
     @StateObject private var appCoordinator = AppCoordinator()
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
         WindowGroup {
@@ -10,7 +12,113 @@ struct FileTypeGuardApp: App {
                 .environmentObject(appCoordinator)
         }
         .defaultSize(width: 900, height: 600)
+        .commands {
+            // 删除默认的"新建窗口"菜单项
+            CommandGroup(replacing: .newItem) { }
+        }
     }
+}
+
+/// 应用代理
+/// 负责设置菜单栏图标和处理窗口关闭
+final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
+
+    private var statusItem: NSStatusItem?
+    private var window: NSWindow?
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        // 创建菜单栏图标
+        setupStatusItem()
+
+        // 确保首次启动时窗口在最前
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            NSApp.activate(ignoringOtherApps: true)
+        }
+    }
+
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        // 注册通知监听
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleWindowClose),
+            name: .simulatedWindowClose,
+            object: nil
+        )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleUpdateWindow(_:)),
+            name: .updateWindow,
+            object: nil
+        )
+    }
+
+    @objc private func handleUpdateWindow(_ notification: Notification) {
+        if let userInfo = notification.userInfo as? [String: NSWindow], let window = userInfo["window"] {
+            self.window = window
+        }
+    }
+
+    private func setupStatusItem() {
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+
+        if let button = statusItem?.button {
+            let config = NSImage.SymbolConfiguration(pointSize: 18, weight: .regular)
+            button.image = NSImage(systemSymbolName: "lock.shield.fill", accessibilityDescription: "FileTypeGuard")?.withSymbolConfiguration(config)
+            button.image?.isTemplate = true
+            button.action = #selector(toggleMainWindow)
+            button.target = self
+        }
+    }
+
+    /// 窗口即将关闭时，阻止关闭并隐藏应用
+    @objc private func handleWindowClose(_ notification: Notification) {
+        NSApp.hide(nil)
+        NSApp.setActivationPolicy(.accessory)  // 隐藏 Dock 图标
+    }
+
+    /// 切换窗口显示/隐藏
+    @objc private func toggleMainWindow() {
+        if NSApp.isHidden || NSApp.activationPolicy() == .accessory {
+            // 如果应用隐藏或 Dock 图标不显示，则恢复
+            NSApp.setActivationPolicy(.regular)  // 显示 Dock 图标
+            NSApp.unhide(nil)
+
+            if let window = window {
+                window.makeKeyAndOrderFront(nil)
+            } else if let mainWindow = NSApp.windows.first {
+                window = mainWindow
+                window?.delegate = self
+                mainWindow.makeKeyAndOrderFront(nil)
+            }
+            NSApp.activate(ignoringOtherApps: true)
+        } else {
+            // 如果应用显示，则隐藏
+            NSApp.hide(nil)
+        }
+    }
+
+    /// 阻止应用在窗口关闭时退出
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        return false
+    }
+}
+
+/// 窗口代理
+/// 用于捕获窗口关闭事件
+class WindowDelegate: NSObject, NSWindowDelegate {
+    static let shared = WindowDelegate()
+
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        NotificationCenter.default.post(name: .simulatedWindowClose, object: sender)
+        return false  // 阻止窗口关闭
+    }
+}
+
+/// 扩展 Notification.Name
+extension Notification.Name {
+    static let simulatedWindowClose = Notification.Name("simulatedWindowClose")
+    static let updateWindow = Notification.Name("updateWindow")
 }
 
 /// 应用协调器
@@ -144,4 +252,3 @@ final class AppCoordinator: ObservableObject {
         }
     }
 }
-

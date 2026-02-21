@@ -140,6 +140,11 @@ struct SettingsView: View {
                 .onChange(of: viewModel.startAtLogin) { _ in
                     viewModel.savePreferences()
                 }
+
+            Toggle(String(localized: "hide_from_dock"), isOn: $viewModel.hideFromDock)
+                .onChange(of: viewModel.hideFromDock) { _ in
+                    viewModel.savePreferences()
+                }
         }
         .padding()
         .background(Color(nsColor: .windowBackgroundColor))
@@ -156,7 +161,7 @@ struct SettingsView: View {
             HStack {
                 Text("version")
                 Spacer()
-                Text("1.0.0")
+                Text("1.1.0")
                     .foregroundStyle(.secondary)
             }
 
@@ -185,6 +190,7 @@ final class SettingsViewModel: ObservableObject {
     @Published var notificationSound = true
     @Published var logRetentionDays = 30
     @Published var startAtLogin = false
+    @Published var hideFromDock = false
 
     private let configManager = ConfigurationManager.shared
 
@@ -197,6 +203,7 @@ final class SettingsViewModel: ObservableObject {
         notificationSound = prefs.notificationSound
         logRetentionDays = prefs.logRetentionDays
         startAtLogin = prefs.startAtLogin
+        hideFromDock = prefs.hideFromDock
     }
 
     func savePreferences() {
@@ -208,6 +215,7 @@ final class SettingsViewModel: ObservableObject {
         prefs.notificationSound = notificationSound
         prefs.logRetentionDays = logRetentionDays
         prefs.startAtLogin = startAtLogin
+        prefs.hideFromDock = hideFromDock
 
         do {
             try configManager.updatePreferences(prefs)

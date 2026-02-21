@@ -10,31 +10,29 @@ localizations:
   - ja
   - zh-Hans
   - zh-Hant
+packages:
+  SwiftUIWindowBinder:
+    url: https://github.com/happycodelucky/SwiftUIWindowBinder.git
+    from: "1.0.0"
 settings:
   base:
     PRODUCT_BUNDLE_IDENTIFIER: com.filetypeguard.mac
-    INFOPLIST_FILE: FileTypeGuard/App/Info.plist
     CODE_SIGN_ENTITLEMENTS: FileTypeGuard/App/FileTypeGuard.entitlements
-    MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_HARDENED_RUNTIME: YES
+    CODE_SIGN_STYLE: Automatic
 targets:
   FileTypeGuard:
     type: application
     platform: macOS
     sources:
       - FileTypeGuard
+    dependencies:
+      - package: SwiftUIWindowBinder
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.filetypeguard.mac
-        INFOPLIST_FILE: FileTypeGuard/App/Info.plist
         CODE_SIGN_ENTITLEMENTS: FileTypeGuard/App/FileTypeGuard.entitlements
         ENABLE_HARDENED_RUNTIME: YES
-        CODE_SIGN_STYLE: Manual
-        CODE_SIGN_IDENTITY: "Developer ID Application: Zhao Xin (96NM39SGJ5)"
-        OTHER_CODE_SIGN_FLAGS: "--timestamp"
-    info:
-      path: FileTypeGuard/App/Info.plist
+        CODE_SIGN_STYLE: Automatic
     entitlements:
       path: FileTypeGuard/App/FileTypeGuard.entitlements
-      properties:
-        com.apple.security.get-task-allow: false

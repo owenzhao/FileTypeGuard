@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftUIWindowBinder
 
 /// 主窗口视图
 struct MainView: View {
@@ -7,18 +8,27 @@ struct MainView: View {
 
     @State private var selectedTab: NavigationTab = .protectedTypes
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    @State private var window: SwiftUIWindowBinder.Window?
 
     // MARK: - Body
 
     var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-            // 侧边栏
-            sidebar
-        } detail: {
-            // 内容区
-            detailView
+        WindowBinder(window: $window) {
+            NavigationSplitView(columnVisibility: $columnVisibility) {
+                // 侧边栏
+                sidebar
+            } detail: {
+                // 内容区
+                detailView
+            }
+            .navigationTitle("FileTypeGuard")
+            .onChange(of: window) { newWindow in
+                if let window = newWindow {
+                    window.delegate = WindowDelegate.shared
+                    NotificationCenter.default.post(name: .updateWindow, object: nil, userInfo: ["window": window])
+                }
+            }
         }
-        .navigationTitle("FileTypeGuard")
     }
 
     // MARK: - Sidebar

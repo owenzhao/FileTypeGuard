@@ -184,7 +184,7 @@
     "•" : {
 
     },
-    "1.0.0" : {
+    "1.1.0" : {
 
     },
     "about" : {
@@ -2719,6 +2719,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "篩選條件"
+          }
+        }
+      }
+    },
+    "hide_from_dock" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide from Dock"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock に表示しない"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Dock 中隐藏"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Dock 中隱藏"
           }
         }
       }

@@ -35,7 +35,7 @@ final class ConfigurationManager {
         var lastModified: Date
 
         init(
-            version: String = "1.0",
+            version: String = "1.1.0",
             protectedTypes: [ProtectionRule] = [],
             preferences: UserPreferences = UserPreferences(),
             lastModified: Date = Date()
@@ -57,6 +57,7 @@ final class ConfigurationManager {
         var autoRecoveryEnabled: Bool = true
         var logRetentionDays: Int = 30
         var startAtLogin: Bool = false
+        var hideFromDock: Bool = false
     }
 
     // MARK: - Error Types
